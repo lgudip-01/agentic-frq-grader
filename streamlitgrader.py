@@ -136,7 +136,7 @@ if st.button("Grade This Response", type="primary"):
         st.warning(
             "Please fill out all fields in this form")
     else:
-        with st.spinner("Running FRQ Grader..."):
+        with st.spinner("Grading Response..."):
             try:
                 rubric_content = read_pdf(rubric_file)
                 report = grade_frq(question, rubric_content, student_text)
@@ -172,3 +172,34 @@ if st.button("Grade This Response", type="primary"):
             except Exception as e:
                 st.error(
                     f"An error occurred while running the evaluation: {e}")
+
+if "report" in st.session_state and "pdf_bytes" in st.session_state:
+    report = st.session_state["report"]
+    pdf_data = st.session_state["pdf_bytes"]
+
+    st.divider()
+
+    # Overview Metrics
+    score_col1, score_col2 = st.columns(2)
+    score_col1.metric("Submission ID", report.submission_id)
+    score_col2.metric(
+        "Final Score", f"{report.total_score} / {report.max_score}")
+
+    # Detailed Breakdown
+    st.subheader("Breakdown by Section")
+    for item in report.evaluations:
+        with st.expander(f"• {item.criterion_name} ({item.points_awarded}/{item.max_points} pts)"):
+            st.write(f"**Rationale:** {item.rationale}")
+
+    # Summary Feedback
+    st.subheader("Summary Feedback")
+    st.info(report.summary_feedback)
+
+    # PDF Export Action Button
+    st.divider()
+    st.download_button(
+        label="📄 Download Official PDF Report",
+        data=pdf_data,
+        file_name=f"Grading_Report_{report.submission_id}.pdf",
+        mime="application/pdf"
+    )
